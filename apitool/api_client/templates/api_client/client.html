@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Client Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { display: flex; flex-direction: column; gap: 20px; }
+        .request-section, .response-section { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+        textarea { height: 150px; font-family: monospace; }
+        button { padding: 10px 15px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background: #45a049; }
+        .error { color: red; }
+        .response-info { margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Client Tool</h1>
+        
+        <div class="request-section">
+            <h2>Request</h2>
+            <form method="POST">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    <label for="method">HTTP Method</label>
+                    <select id="method" name="method">
+                        <option value="GET">GET</option>
+                        <option value="POST">POST</option>
+                        <option value="PUT">PUT</option>
+                        <option value="DELETE">DELETE</option>
+                        <option value="PATCH">PATCH</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="url">URL</label>
+                    <input type="text" id="url" name="url" placeholder="https://api.example.com/endpoint" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="headers">Headers (one per line as Key:Value)</label>
+                    <textarea id="headers" name="headers" placeholder="Content-Type: application/json
+Authorization: Bearer token"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content_type">Body Content Type</label>
+                    <select id="content_type" name="content_type">
+                        <option value="json">JSON</option>
+                        <option value="text">Text</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="body">Request Body</label>
+                    <textarea id="body" name="body" placeholder='{"key": "value"}'></textarea>
+                </div>
+                
+                <button type="submit">Send Request</button>
+            </form>
+        </div>
+        
+        <div class="response-section">
+            <h2>Response</h2>
+            {% if error %}
+                <div class="error">Error: {{ error }}</div>
+            {% endif %}
+            
+            {% if status_code %}
+                <div class="response-info">
+                    Status: {{ status_code }} | Time: {{ time_elapsed }}s
+                </div>
+                <textarea readonly>{{ response }}</textarea>
+            {% else %}
+                <p>Send a request to see the response here.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
