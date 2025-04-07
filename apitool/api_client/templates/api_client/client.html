@@ -250,15 +250,91 @@
         .then(res => res.text())
         .then(text => {
             document.getElementById('response').value = text;
-    
-            const li = document.createElement('li');
-            li.textContent = method + ' ' + url;
-            historyList.prepend(li);
+            loadHistory();
         })
         .catch(err => {
             document.getElementById('response').value = 'Error: ' + err;
         });
     }
+    {% comment %} function loadHistory() {
+        fetch('/get-history/')
+            .then(res => res.json())
+            .then(data => {
+                historyList.innerHTML = ''; // clear old
+                data.history.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.method} ${item.url} (${item.status_code})`;
+                    li.onclick = () => {
+                        alert(`Clicked history item:\n${item.method} ${item.url}`);
+                        // You can expand this to fetch full request/response details if needed
+                    };
+                    historyList.appendChild(li);
+                });
+            });
+    }
+    
+    // Load history when page loads
+    window.onload = loadHistory; {% endcomment %}
+    function loadHistory() {
+        fetch('/get-history/')
+            .then(res => res.json())
+            .then(data => {
+                historyList.innerHTML = '';
+                data.history.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.method} ${item.url} (${item.status_code})`;
+                    li.onclick = () => populateFormFromHistory(item);
+                    historyList.appendChild(li);
+                });
+            });
+    }
+    
+    function populateFormFromHistory(item) {
+        // Method & URL
+        document.getElementById('http-method').value = item.method;
+        document.getElementById('url').value = item.url;
+        //document.getElementById('response').value = item.response_body || '';
+        try {
+            const parsed = JSON.parse(item.response_body);
+            document.getElementById('response').value = JSON.stringify(parsed, null, 4);
+        } catch {
+            document.getElementById('response').value = item.response_body || '';
+        }
+        
+        // Clear headers
+        const headersTableBody = document.querySelector('#headers-table tbody');
+        headersTableBody.innerHTML = '';
+        if (item.headers) {
+            const headers = item.headers.split('\n');
+            headers.forEach(line => {
+                const [key, ...rest] = line.split(':');
+                const value = rest.join(':').trim();
+                if (key && value !== undefined) {
+                    const row = headersTableBody.insertRow();
+                    row.innerHTML = `
+                        <td><input type="text" value="${key}"></td>
+                        <td><input type="text" value="${value}"></td>
+                        <td><button onclick="this.closest('tr').remove()">Remove</button></td>
+                    `;
+                }
+            });
+        }
+    
+        // Populate raw body if available
+        if (item.body) {
+            document.getElementById('body-type').value = 'raw';
+            toggleBodyType(); // show raw section
+            document.getElementById('body-raw').value = item.body;
+        } else {
+            document.getElementById('body-type').value = 'none';
+            toggleBodyType();
+        }
+    
+        // Switch to URL and Body tabs if needed
+        showTab('headers');
+    }
+    // Load history when page loads
+window.onload = loadHistory;
     
   </script>
   </body>

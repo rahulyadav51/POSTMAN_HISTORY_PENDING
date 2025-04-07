@@ -5,6 +5,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import APIRequestHistory
+from django.core.serializers.json import DjangoJSONEncoder
 
 @csrf_exempt
 def api_client(request):
@@ -62,8 +63,8 @@ def api_client(request):
             # Parse response body
             try:
                 body = response.json()
-                # body_str = json.dumps(body, indent=4)
-                body_str = body
+                body_str = json.dumps(body, indent=4)
+                body_str_response = body
             except Exception:
                 body_str = response.text
 
@@ -97,7 +98,7 @@ def api_client(request):
 
             return JsonResponse({
                 'status_code': response.status_code,
-                'response_body': body_str,
+                'response_body': body_str_response,
                 'time_elapsed': elapsed,
                 # 'history': updated_history
             }, json_dumps_params={'indent': 4})
@@ -107,6 +108,38 @@ def api_client(request):
 
     # GET request - render the client page
     return render(request, 'api_client/client.html', context)
+# def get_history(request):
+#     history_qs = APIRequestHistory.objects.order_by('-timestamp')[:10]
+#     history = [
+#         {
+#             'id': item.id,
+#             'method': item.method,
+#             'url': item.url,
+#             'status_code': item.status_code,
+#             'timestamp': item.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+#         }
+#         for item in history_qs
+#     ]
+#     return JsonResponse({'history': history}, json_dumps_params={'indent': 2}, encoder=DjangoJSONEncoder)
+def get_history(request):
+    try:
+        history = APIRequestHistory.objects.all().order_by('-timestamp')[:20]
+        data = []
+        for item in history:
+            body = item.raw_body or json.dumps(item.formdata) or json.dumps(item.urlencoded)
+            data.append({
+                "id": item.id,
+                "method": item.method,
+                "url": item.url,
+                "headers": item.headers,
+                "body": body,
+                "status_code": item.status_code,
+                "response_body": item.response_body
+            })
+        return JsonResponse({"history": data})
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 
 def get_history_detail(request, history_id):
     return JsonResponse({'message': f'Placeholder for history ID {history_id}'})
