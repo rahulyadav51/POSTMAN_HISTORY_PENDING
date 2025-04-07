@@ -76,10 +76,15 @@ WSGI_APPLICATION = 'apitool.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postman',
+        'USER': 'postgres',
+        'PASSWORD': 'password',
+        'HOST': '/var/run/postgresql', 
+        'PORT': '', 
 }
+}
+
 
 
 # Password validation

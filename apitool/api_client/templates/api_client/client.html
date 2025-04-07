@@ -1,547 +1,4 @@
-<!-- <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Postman Clone</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 30px;
-            background-color: #f5f5f5;
-        }
-
-        h1 {
-            text-align: center;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
-        input[type="text"], select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 6px 0 12px 0;
-            box-sizing: border-box;
-        }
-
-        .form-section {
-            background: white;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        }
-
-        .radio-inline {
-            display: inline-block;
-            margin-right: 15px;
-        }
-
-        .btn-send {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        .btn-send:hover {
-            background-color: #0056b3;
-        }
-
-        table {
-            width: 100%;
-            margin-top: 10px;
-            border-collapse: collapse;
-        }
-
-        td, th {
-            padding: 6px;
-        }
-
-        textarea#response {
-            height: 250px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Postman Clone</h1>
-
-    <div class="form-section">
-        <label for="url">URL:</label>
-        <input type="text" id="url" placeholder="https://jsonplaceholder.typicode.com/posts">
-
-        <label for="http-method">Method:</label>
-        <select id="http-method">
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="PATCH">PATCH</option>
-            <option value="DELETE">DELETE</option>
-        </select>
-
-        <label for="headers">Headers (key: value per line):</label>
-        <textarea id="headers" rows="4" placeholder="Content-Type: application/json"></textarea>
-    </div>
-
-    <div class="form-section">
-        <label>Body Type:</label><br>
-        <label class="radio-inline"><input type="radio" name="body-type" value="raw" checked> Raw</label>
-        <label class="radio-inline"><input type="radio" name="body-type" value="formdata"> Form Data</label>
-        <label class="radio-inline"><input type="radio" name="body-type" value="urlencoded"> x-www-form-urlencoded</label>
-
-        <div id="raw-body">
-            <label for="raw-type">Raw Type:</label>
-            <select id="raw-type">
-                <option value="json">JSON</option>
-                <option value="text">Text</option>
-            </select>
-            <textarea id="body-raw" rows="5" placeholder='{"name": "John"}'></textarea>
-        </div>
-
-        <div id="formdata-body" style="display:none;">
-            <table id="formdata-table">
-                <thead>
-                    <tr><th>Key</th><th>Value</th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" name="formdata-key[]"></td>
-                        <td><input type="text" name="formdata-value[]"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div id="urlencoded-body" style="display:none;">
-            <table id="urlencoded-table">
-                <thead>
-                    <tr><th>Key</th><th>Value</th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" name="urlencoded-key[]"></td>
-                        <td><input type="text" name="urlencoded-value[]"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <button type="button" class="btn-send" onclick="sendRequest(event)">Send</button>
-
-    <div class="form-section">
-        <label for="response">Response:</label>
-        <textarea id="response" readonly></textarea>
-    </div>
-
-    <script>
-        // Toggle body type sections
-        document.querySelectorAll('input[name="body-type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                document.getElementById('raw-body').style.display = this.value === 'raw' ? 'block' : 'none';
-                document.getElementById('formdata-body').style.display = this.value === 'formdata' ? 'block' : 'none';
-                document.getElementById('urlencoded-body').style.display = this.value === 'urlencoded' ? 'block' : 'none';
-            });
-        });
-
-        async function sendRequest(event) {
-            event.preventDefault();
-
-            const url = document.getElementById('url').value;
-            const method = document.getElementById('http-method').value;
-            const headersRaw = document.getElementById('headers').value;
-            let headers = {};
-
-            headersRaw.split('\n').forEach(line => {
-                const [key, ...valueParts] = line.split(':');
-                if (key && valueParts.length > 0) {
-                    headers[key.trim()] = valueParts.join(':').trim();
-                }
-            });
-
-            const bodyType = document.querySelector('input[name="body-type"]:checked').value;
-            let body = null;
-
-            if (bodyType === 'raw') {
-                body = document.getElementById('body-raw').value;
-                const rawType = document.getElementById('raw-type').value;
-                if (rawType === 'json') {
-                    headers['Content-Type'] = 'application/json';
-                } else {
-                    headers['Content-Type'] = 'text/plain';
-                }
-            }
-
-            if (bodyType === 'formdata') {
-                body = new FormData();
-                document.querySelectorAll('#formdata-table tbody tr').forEach(row => {
-                    const key = row.querySelector('input[name="formdata-key[]"]').value;
-                    const value = row.querySelector('input[name="formdata-value[]"]').value;
-                    if (key) body.append(key, value);
-                });
-            }
-
-            if (bodyType === 'urlencoded') {
-                body = new URLSearchParams();
-                document.querySelectorAll('#urlencoded-table tbody tr').forEach(row => {
-                    const key = row.querySelector('input[name="urlencoded-key[]"]').value;
-                    const value = row.querySelector('input[name="urlencoded-value[]"]').value;
-                    if (key) body.append(key, value);
-                });
-                headers['Content-Type'] = 'application/x-www-form-urlencoded';
-            }
-
-            if (['GET', 'DELETE'].includes(method)) {
-                body = null;
-            }
-
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers,
-                    body: bodyType === 'raw' || bodyType === 'urlencoded' ? body : (bodyType === 'formdata' ? body : null)
-                });
-
-                const contentType = response.headers.get('content-type');
-                let responseText = '';
-
-                if (contentType && contentType.includes('application/json')) {
-                    const json = await response.json();
-                    responseText = JSON.stringify(json, null, 2);
-                } else {
-                    responseText = await response.text();
-                }
-
-                document.getElementById('response').value = responseText;
-            } catch (error) {
-                document.getElementById('response').value = 'Error: ' + error.message;
-            }
-        }
-         function loadFromHistory(url, method, headers, bodyType, bodyContent) {
-        document.getElementById('url').value = url;
-        document.getElementById('http-method').value = method;
-        document.getElementById('headers').value = headers;
-
-        // Set body type radio
-        document.querySelector(`input[name="body-type"][value="${bodyType}"]`).checked = true;
-        document.querySelectorAll('input[name="body-type"]').forEach(r => r.dispatchEvent(new Event('change')));
-
-        if (bodyType === 'raw') {
-            document.getElementById('body-raw').value = bodyContent;
-        }
-
-        // Optionally trigger auto-submit
-        // sendRequest(new Event('click'));
-    }
-    </script>
-</body>
-</html> -->
-
-<!-- 
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Postman Clone</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f0f2f5;
-        }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        label {
-            font-weight: bold;
-        }
-
-        input[type="text"], select, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 6px 0 12px 0;
-            box-sizing: border-box;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-
-        .section {
-            margin-bottom: 25px;
-        }
-
-        .btn-send {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .btn-send:hover {
-            background-color: #0056b3;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            padding: 8px;
-            border: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f8f9fa;
-        }
-
-        textarea#response {
-            height: 300px;
-        }
-
-        .form-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .form-group > input {
-            flex: 1;
-        }
-
-        .section-title {
-            font-size: 18px;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #ccc;
-            padding-bottom: 5px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Postman Clone</h1>
-    <div class="container">
-        <div class="section">
-            <label for="url">URL:</label>
-            <input type="text" id="url" placeholder="https://jsonplaceholder.typicode.com/posts">
-
-            <label for="http-method">Method:</label>
-            <select id="http-method">
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-                <option value="DELETE">DELETE</option>
-            </select>
-        </div>
-
-        <div class="section">
-            <div class="section-title">Params</div>
-            <table id="params-table">
-                <thead>
-                    <tr><th>Key</th><th>Value</th><th>Description</th></tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><input type="text" name="param-key[]"></td>
-                        <td><input type="text" name="param-value[]"></td>
-                        <td><input type="text" name="param-desc[]"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="section">
-            <label for="headers">Headers (key: value per line):</label>
-            <textarea id="headers" rows="4" placeholder="Content-Type: application/json"></textarea>
-        </div>
-
-        <div class="section">
-            <div class="section-title">Body Type</div>
-            <label><input type="radio" name="body-type" value="raw" checked> Raw</label>
-            <label><input type="radio" name="body-type" value="formdata"> Form Data</label>
-            <label><input type="radio" name="body-type" value="urlencoded"> x-www-form-urlencoded</label>
-
-            <div id="raw-body">
-                <label for="raw-type">Raw Type:</label>
-                <select id="raw-type">
-                    <option value="json">JSON</option>
-                    <option value="text">Text</option>
-                </select>
-                <textarea id="body-raw" rows="5" placeholder='{"name": "John"}'></textarea>
-            </div>
-
-            <div id="formdata-body" style="display:none;">
-                <table id="formdata-table">
-                    <thead>
-                        <tr><th>Key</th><th>Value</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><input type="text" name="formdata-key[]"></td>
-                            <td><input type="text" name="formdata-value[]"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div id="urlencoded-body" style="display:none;">
-                <table id="urlencoded-table">
-                    <thead>
-                        <tr><th>Key</th><th>Value</th></tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><input type="text" name="urlencoded-key[]"></td>
-                            <td><input type="text" name="urlencoded-value[]"></td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <button type="button" class="btn-send" onclick="sendRequest(event)">Send</button>
-
-        <div class="section">
-            <label for="response">Response:</label>
-            <textarea id="response" readonly></textarea>
-        </div>
-
-        <div class="section">
-            <h3>History</h3>
-            <ul>
-                {% for item in history %}
-                    <li>
-                        <a href="#" onclick="loadFromHistory('{{ item.url }}', '{{ item.method }}', `{{ item.headers|escapejs }}`, '{{ item.body_type }}', `{{ item.body_content|escapejs }}`)">
-                            {{ item.method }} {{ item.url }} <small>({{ item.timestamp|date:"Y-m-d H:i:s" }})</small>
-                        </a>
-                    </li>
-                {% empty %}
-                    <li>No history found</li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-
-    <script>
-        document.querySelectorAll('input[name="body-type"]').forEach(radio => {
-            radio.addEventListener('change', function() {
-                document.getElementById('raw-body').style.display = this.value === 'raw' ? 'block' : 'none';
-                document.getElementById('formdata-body').style.display = this.value === 'formdata' ? 'block' : 'none';
-                document.getElementById('urlencoded-body').style.display = this.value === 'urlencoded' ? 'block' : 'none';
-            });
-        });
-
-        async function sendRequest(event) {
-            event.preventDefault();
-
-            const baseUrl = document.getElementById('url').value;
-            const method = document.getElementById('http-method').value;
-            const headersRaw = document.getElementById('headers').value;
-            let headers = {};
-
-            headersRaw.split('\n').forEach(line => {
-                const [key, ...valueParts] = line.split(':');
-                if (key && valueParts.length > 0) {
-                    headers[key.trim()] = valueParts.join(':').trim();
-                }
-            });
-
-            const params = new URLSearchParams();
-            document.querySelectorAll('#params-table tbody tr').forEach(row => {
-                const key = row.querySelector('input[name="param-key[]"]').value;
-                const value = row.querySelector('input[name="param-value[]"]').value;
-                if (key) params.append(key, value);
-            });
-            const url = `${baseUrl}?${params.toString()}`;
-
-            const bodyType = document.querySelector('input[name="body-type"]:checked').value;
-            let body = null;
-
-            if (bodyType === 'raw') {
-                body = document.getElementById('body-raw').value;
-                const rawType = document.getElementById('raw-type').value;
-                headers['Content-Type'] = rawType === 'json' ? 'application/json' : 'text/plain';
-            }
-
-            if (bodyType === 'formdata') {
-                body = new FormData();
-                document.querySelectorAll('#formdata-table tbody tr').forEach(row => {
-                    const key = row.querySelector('input[name="formdata-key[]"]').value;
-                    const value = row.querySelector('input[name="formdata-value[]"]').value;
-                    if (key) body.append(key, value);
-                });
-            }
-
-            if (bodyType === 'urlencoded') {
-                body = new URLSearchParams();
-                document.querySelectorAll('#urlencoded-table tbody tr').forEach(row => {
-                    const key = row.querySelector('input[name="urlencoded-key[]"]').value;
-                    const value = row.querySelector('input[name="urlencoded-value[]"]').value;
-                    if (key) body.append(key, value);
-                });
-                headers['Content-Type'] = 'application/x-www-form-urlencoded';
-            }
-
-            if (["GET", "DELETE"].includes(method)) {
-                body = null;
-            }
-
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers,
-                    body: bodyType === 'raw' || bodyType === 'urlencoded' ? body : (bodyType === 'formdata' ? body : null)
-                });
-
-                const contentType = response.headers.get('content-type');
-                let responseText = '';
-
-                if (contentType && contentType.includes('application/json')) {
-                    const json = await response.json();
-                    responseText = JSON.stringify(json, null, 2);
-                } else {
-                    responseText = await response.text();
-                }
-
-                document.getElementById('response').value = responseText;
-            } catch (error) {
-                document.getElementById('response').value = 'Error: ' + error.message;
-            }
-        }
-
-        function loadFromHistory(url, method, headers, bodyType, bodyContent) {
-            document.getElementById('url').value = url;
-            document.getElementById('http-method').value = method;
-            document.getElementById('headers').value = headers;
-
-            document.querySelector(`input[name="body-type"][value="${bodyType}"]`).checked = true;
-            document.querySelectorAll('input[name="body-type"]').forEach(r => r.dispatchEvent(new Event('change')));
-
-            if (bodyType === 'raw') {
-                document.getElementById('body-raw').value = bodyContent;
-            }
-        }
-    </script>
-</body>
-</html> --><!DOCTYPE html>
 <html lang="en">
   <head>
       <meta charset="UTF-8">
@@ -747,68 +204,62 @@
       }
   
       function sendRequest(e) {
-          e.preventDefault();
-  
-          const url = document.getElementById('url').value;
-          const method = document.getElementById('http-method').value;
-          const headers = {};
-  
-          document.querySelectorAll('#headers-table tbody tr').forEach(row => {
-              const key = row.cells[0].querySelector('input').value;
-              const value = row.cells[1].querySelector('input').value;
-              if (key) headers[key] = value;
-          });
-  
-          let finalUrl = new URL(url);
-          document.querySelectorAll('#params-table tbody tr').forEach(row => {
-              const key = row.cells[0].querySelector('input').value;
-              const value = row.cells[1].querySelector('input').value;
-              if (key) finalUrl.searchParams.append(key, value);
-          });
-  
-          let body = null;
-          const bodyType = document.getElementById('body-type').value;
-  
-          if (bodyType === 'formdata') {
-              body = new FormData();
-              document.querySelectorAll('#formdata-table tbody tr').forEach(row => {
-                  const key = row.cells[0].querySelector('input').value;
-                  const value = row.cells[1].querySelector('input').value;
-                  if (key) body.append(key, value);
-              });
-          } else if (bodyType === 'urlencoded') {
-              body = new URLSearchParams();
-              document.querySelectorAll('#urlencoded-table tbody tr').forEach(row => {
-                  const key = row.cells[0].querySelector('input').value;
-                  const value = row.cells[1].querySelector('input').value;
-                  if (key) body.append(key, value);
-              });
-              headers['Content-Type'] = 'application/x-www-form-urlencoded';
-          } else if (bodyType === 'raw') {
-              body = document.getElementById('body-raw').value;
-              headers['Content-Type'] = {
-                  'json': 'application/json',
-                  'text': 'text/plain',
-                  'xml': 'application/xml'
-              }[document.getElementById('raw-type').value];
-          }
-  
-          fetch(finalUrl, {
-              method,
-              headers,
-              body: ['GET', 'DELETE'].includes(method) ? null : body
-          })
-          .then(res => res.text())
-          .then(text => {
-              document.getElementById('response').value = text;
-              const li = document.createElement('li');
-              li.textContent = method + ' ' + finalUrl;
-              historyList.prepend(li);
-          })
-          .catch(err => {
-              document.getElementById('response').value = 'Error: ' + err;
-          });
-      }
+        e.preventDefault();
+    
+        const method = document.getElementById('http-method').value;
+        const url = document.getElementById('url').value;
+        const headersList = [];
+    
+        document.querySelectorAll('#headers-table tbody tr').forEach(row => {
+            const key = row.cells[0].querySelector('input').value;
+            const value = row.cells[1].querySelector('input').value;
+            if (key) headersList.push(`${key}: ${value}`);
+        });
+    
+        const headersRaw = headersList.join('\n');
+        const bodyType = document.getElementById('body-type').value;
+        const formData = new FormData();
+    
+        formData.append('http_method', method);
+        formData.append('url', url);
+        formData.append('headers', headersRaw);
+        formData.append('body_type', bodyType);
+    
+        if (bodyType === 'formdata') {
+            document.querySelectorAll('#formdata-table tbody tr').forEach(row => {
+                const key = row.cells[0].querySelector('input').value;
+                const value = row.cells[1].querySelector('input').value;
+                formData.append('formdata-key[]', key);
+                formData.append('formdata-value[]', value);
+            });
+        } else if (bodyType === 'urlencoded') {
+            document.querySelectorAll('#urlencoded-table tbody tr').forEach(row => {
+                const key = row.cells[0].querySelector('input').value;
+                const value = row.cells[1].querySelector('input').value;
+                formData.append('urlencoded-key[]', key);
+                formData.append('urlencoded-value[]', value);
+            });
+        } else if (bodyType === 'raw') {
+            formData.append('raw_body', document.getElementById('body-raw').value);
+        }
+    
+        fetch('/api-client/', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.text())
+        .then(text => {
+            document.getElementById('response').value = text;
+    
+            const li = document.createElement('li');
+            li.textContent = method + ' ' + url;
+            historyList.prepend(li);
+        })
+        .catch(err => {
+            document.getElementById('response').value = 'Error: ' + err;
+        });
+    }
+    
   </script>
   </body>
   </html>
